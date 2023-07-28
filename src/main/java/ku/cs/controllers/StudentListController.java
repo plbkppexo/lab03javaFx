@@ -8,8 +8,10 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import ku.cs.models.Student;
 import ku.cs.models.StudentList;
+import ku.cs.services.Datasource;
 import ku.cs.services.FXRouter;
-import ku.cs.services.StudentHardCodeDatasource;
+import ku.cs.services.StudentListFileDatasource;
+import ku.cs.services.StudentListHardCodeDatasource;
 
 import java.io.IOException;
 
@@ -24,12 +26,17 @@ public class StudentListController {
 
     private StudentList studentList;
     private Student selectedStudent;
+    private Datasource<StudentList> datasource;
 
     @FXML
     public void initialize() {
         errorLabel.setText("");
         clearStudentInfo();
-        StudentHardCodeDatasource datasource = new StudentHardCodeDatasource();
+        // StudentListHardCodeDatasource datasource = new StudentListHardCodeDatasource();
+        // Datasource<StudentList> datasource = new StudentListHardCodeDatasource();
+        // เปลี่ยนเป็นการอ่านข้อมูลทั้งหมดจากไฟล์นอกโปรเจค
+        // Datasource<StudentList> datasource = new StudentListFileDatasource("data", "student-list.csv");
+        datasource = new StudentListFileDatasource("data", "student-list.csv");
         studentList = datasource.readData();
         showList(studentList);
         studentListView.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Student>() {
@@ -77,10 +84,16 @@ public class StudentListController {
         if (selectedStudent != null) {
             String scoreText = giveScoreTextField.getText();
             String errorMessage = "";
+
             try {
                 double score = Double.parseDouble(scoreText);
                 studentList.giveScoreToId(selectedStudent.getId(), score);
                 showStudentInfo(selectedStudent);
+
+                // เขียนข้อมูลลงในไฟล์เมื่อมีการเปลี่ยนแปลงของข้อมูล
+                datasource.writeData(studentList);
+
+                showList(studentList);
             } catch (NumberFormatException e) {
                 errorMessage = "Please insert number value";
                 errorLabel.setText(errorMessage);
